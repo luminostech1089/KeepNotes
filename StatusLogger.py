@@ -2,6 +2,7 @@ __Author__ = 'Abhijit Ghongade'
 __Version__ = 1.0
 
 import os
+import re
 import sys
 from cmd import Cmd
 from gwb import Workbook
@@ -12,7 +13,6 @@ import pickle
 LOGFILE_NAME = 'Status.txt'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 MAXLINE_LEN = 100
-fileobj = None
 LOGFILE_PATH = os.path.join(SCRIPT_DIR, LOGFILE_NAME)
 CONFIGFILE_PATH = os.path.join(SCRIPT_DIR, 'Config.zip')
 CONFIG_DATA = {'lastdate': '',
@@ -58,14 +58,15 @@ class StatusLogger(Cmd):
         for key, data in self.data_dict.iteritems():
             print("{} : {}".format(key, data))
 
-    def update_data(self):
+    def do_update(self, line):
         """
         Method to update the data added.
         """
-        self.do_view()
+        self.do_view(line)
         print('\n Enter index of record to update')
         index = raw_input('>')
         if index in self.data_dict:
+            print('Old data: ', self.data_dict[index])
             print("Enter new data")
             new_data = raw_input('>')
             self.data_dict[index] = new_data
@@ -86,18 +87,29 @@ class StatusLogger(Cmd):
         """
         print(help_content)
 
-    def do_commit(self, line):
+    def do_commit(self, date):
         """
         Method to write data to log file.
+        To Do - User entered date validation
         """
         header_str = '*'*50 + '\n' + 'date \n' + '*'*50 + '\n\n'
-        curdate = cur_date()
+        if not date:
+            curdate = cur_date()
+        elif re.match('^\s*?\d{1,2}-\d{1,2}-\d{4}\s*?$', date):
+            curdate = date
+        else:
+            print('Invalid date format. Valid date format supported is: dd-mm-yy')
+            return
+        # Don't commit if no data added
+        if not self.data_dict:
+            print('Error: No data to commit')
+            return
         if not self._is_same_day_commit():
             date = ' Date: ' + curdate
             self.fileobj.write(header_str.replace('date', date))
             self.configdata['lastdate'] = curdate
             self.configdata['alldates'].append(curdate)
-            print('debug: alldates ', self.configdata['alldates'])
+            #print('debug: alldates ', self.configdata['alldates'])
             # Update conf file - To Do: Move this part at exit point
             pickle.dump(self.configdata, open(CONFIGFILE_PATH, "w"))
         for index in self.data_dict:
@@ -127,6 +139,11 @@ class StatusLogger(Cmd):
 
     def do_exit(self, line):
         return True
+
+    def do_sync(self, line):
+        #  Identify excel row where data to be added
+        #  Iterate over dictionary and add data to rows
+        pass
 
 if __name__ == "__main__":
     StatusLogger().cmdloop()
