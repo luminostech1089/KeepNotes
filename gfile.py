@@ -12,13 +12,13 @@ __Version__ = 1.0
 from pydrive.drive import GoogleDrive
 from pydrive.auth import GoogleAuth
 import os
-from constants import LOGFILE_PATH
+#from constants import LOGFILE_PATH
 from constants import SCRIPT_DIR
 from constants import CLIENT_SECRETS_JSON
 
 class GFile():
     def __init__(self):
-        self.logfile = LOGFILE_PATH
+        #self.logfile = LOGFILE_PATH
         gauth = self._authenticate()
         self.drive = GoogleDrive(gauth)
 

@@ -147,7 +147,12 @@ class StatusLogger(Cmd):
         #  Identify excel row where data to be added
         #  Iterate over dictionary and add data to rows
         gfile = GFile()
+        self.fileobj.seek(0) # Move file pointer to the start of file
         data = self.fileobj.read()
+        # To commit changes to file, file pointer must be repositioned
+        # Since file is opened in "a+" mode f.seek(0) results in file pointer to be set at next write location
+        # Ref: http://python-reference.readthedocs.io/en/latest/docs/file/seek.html
+        self.fileobj.seek(0)
         gfile.updateFileContent(FILE_ON_GOGGLE_DRIVE, contentStr=data)
 
 
