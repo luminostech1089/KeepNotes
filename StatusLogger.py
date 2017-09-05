@@ -86,7 +86,8 @@ class StatusLogger(Cmd):
         view: View entered data
         update: Update entered data
         commit: Write data to status log file
-        exit: Eit from log file
+        sync: Sync status file to google drive 
+        exit: Exit from log file
         """
         print(help_content)
 
