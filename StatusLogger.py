@@ -5,11 +5,12 @@ import os
 import re
 import sys
 from cmd import Cmd
-from gwb import Workbook
+# from gwb import Workbook
 import datetime
 import pickle
-
-
+from gfile import GFile
+from constants import LOGFILE_NAME, LOGFILE_PATH, CONFIGFILE_PATH, CONFIG_DATA, FILE_ON_GOGGLE_DRIVE
+"""
 LOGFILE_NAME = 'Status.txt'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 MAXLINE_LEN = 100
@@ -17,6 +18,8 @@ LOGFILE_PATH = os.path.join(SCRIPT_DIR, LOGFILE_NAME)
 CONFIGFILE_PATH = os.path.join(SCRIPT_DIR, 'Config.zip')
 CONFIG_DATA = {'lastdate': '',
                'alldates': []}
+FILE_ON_GOGGLE_DRIVE = "StatusTracking"
+"""
 
 
 def cur_date():
@@ -24,8 +27,8 @@ def cur_date():
     now = datetime.datetime.now()
     return now.strftime(date_format)
 
-class StatusLogger(Cmd):
 
+class StatusLogger(Cmd):
     def __init__(self):
         Cmd.__init__(self)
         self.data_dict = {}
@@ -43,7 +46,7 @@ class StatusLogger(Cmd):
         print('Enter your data')
         count = 0
         data = raw_input('{} =>'.format(count))
-        while(len(data) > 0):
+        while (len(data) > 0):
             self.data_dict[str(count)] = data
             count += 1
             data = raw_input('{} =>'.format(count))
@@ -83,7 +86,8 @@ class StatusLogger(Cmd):
         view: View entered data
         update: Update entered data
         commit: Write data to status log file
-        exit: Eit from log file
+        sync: Sync status file to google drive 
+        exit: Exit from log file
         """
         print(help_content)
 
@@ -92,7 +96,7 @@ class StatusLogger(Cmd):
         Method to write data to log file.
         To Do - User entered date validation
         """
-        header_str = '*'*50 + '\n' + 'date \n' + '*'*50 + '\n\n'
+        header_str = '*' * 50 + '\n' + 'date \n' + '*' * 50 + '\n\n'
         if not date:
             curdate = cur_date()
         elif re.match('^\s*?\d{1,2}-\d{1,2}-\d{4}\s*?$', date):
@@ -109,7 +113,7 @@ class StatusLogger(Cmd):
             self.fileobj.write(header_str.replace('date', date))
             self.configdata['lastdate'] = curdate
             self.configdata['alldates'].append(curdate)
-            #print('debug: alldates ', self.configdata['alldates'])
+            # print('debug: alldates ', self.configdata['alldates'])
             # Update conf file - To Do: Move this part at exit point
             pickle.dump(self.configdata, open(CONFIGFILE_PATH, "w"))
         for index in self.data_dict:
@@ -143,8 +147,15 @@ class StatusLogger(Cmd):
     def do_sync(self, line):
         #  Identify excel row where data to be added
         #  Iterate over dictionary and add data to rows
-        pass
+        gfile = GFile()
+        self.fileobj.seek(0) # Move file pointer to the start of file
+        data = self.fileobj.read()
+        # To commit changes to file, file pointer must be repositioned
+        # Since file is opened in "a+" mode f.seek(0) results in file pointer to be set at next write location
+        # Ref: http://python-reference.readthedocs.io/en/latest/docs/file/seek.html
+        self.fileobj.seek(0)
+        gfile.updateFileContent(FILE_ON_GOGGLE_DRIVE, contentStr=data)
+
 
 if __name__ == "__main__":
     StatusLogger().cmdloop()
-
